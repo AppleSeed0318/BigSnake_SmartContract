@@ -99,7 +99,6 @@ class[[eosio::contract("BigSnakeSolo")]] BigSnakeSolo : public eosio::contract {
 			if(iterator->balance_BSG.amount > 0) {
 				people.modify(iterator, user, [&](auto& row) {
 					row.respawn_time = current_time;
-					row.health_point += 20;
 					row.balance_BSG.amount -= 1;
 				});
 				return true;
@@ -107,6 +106,24 @@ class[[eosio::contract("BigSnakeSolo")]] BigSnakeSolo : public eosio::contract {
 			return false;
 		}
 		
+		[[eosio::action]]
+		bool eatanddrink(name user) {
+			require_auth(user);
+			
+			person_index people(get_self(), get_first_receiver().value);
+			auto iterator = people.find(user.value);
+			
+			check(iterator != people.end(), "check user");
+			if(iterator->balance_BSG.amount > 0) {
+				people.modify(iterator, user, [&](auto& row) {
+					row.health_point = 100;
+					row.balance_BSG.amount -= 1;
+				});
+				return true;
+			}
+			return false;
+		}
+
 		// check win or loss
 		// return 4: lose, 5: wait until respawn, 6: not enough health
 		[[eosio::action]]
@@ -150,7 +167,6 @@ class[[eosio::contract("BigSnakeSolo")]] BigSnakeSolo : public eosio::contract {
 					row.level += 1;
 					row.solo_killed = 0;
 					row.balance_BSM.amount += iterator->level*3 - 2;
-					row.health_point += 20;
 				});
 				// remove contract BSM balance in owner balance
 				person_index people(get_self(), get_first_receiver().value);
